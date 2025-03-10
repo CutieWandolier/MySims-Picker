@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="initial-scale=1.0">
+<title>Picker</title>
+<style>
+body {
+    background:#FFF;
+    color:#000;
+    font-family:verdana, sans-serif;
+    font-size:10pt;
+    margin:0;
+    padding:10px;
+}
+
+a:link, a:visited {
+    color:#008;
+    font-weight:bold;
+    text-decoration:none;
+}
+
+a:active, a:hover {
+    color:#ACF;
+}
+
+.info {
+    font-weight:bold;
+}
+
+button {
+    font-family:inherit;
+    cursor:pointer;
+    border:0;
+    border-radius:3px;
+    padding:0.3em 0.5em;
+    background:#CCC;
+    color:#000;
+}
+
+button:hover {
+    background:#DDD;
+}
+
+button.disabled {
+    background:#DDD;
+    color:#888;
+    cursor:not-allowed;
+}
+
+button.disabled:hover {
+    background:#DDD;
+}
+
+#container {
+    position:relative;
+    margin-left:-10px;
+    margin-right:-10px;
+    padding:10px;
+    overflow:hidden;
+}
+
+@media (min-width:1024px) {
+    /* Put the found favorites beside the picking div when the window is sufficiently large */
+    #picking {
+        float:left;
+        width:636px;
+    }
+
+    #secondary {
+        margin-left:646px;
+    }
+}
+
+@media (min-width:1300px) {
+    /* Once we get to the point where 636px is less than half of the width of the screen, make the picking div just take up half */
+    #picking {
+        width:50%;
+    }
+
+    #secondary {
+        margin-left:51%;
+    }
+}
+
+#pick {
+    background:#58F;
+    color:#FFF;
+    font-size:larger;
+    font-weight:bold;
+    width:6em;
+    border-radius:5px;
+    margin-right:10px;
+}
+
+#pick.disabled {
+    background:#ACF;
+}
+
+#pick:hover {
+    background:#ACF;
+}
+
+.item-list {
+    padding:0;
+    list-style-type:none;
+    line-height:100px;
+}
+
+.item-list li {
+    margin:0;
+    display:inline-block;
+    height:100px;
+    width:100px;
+    line-height:100px;
+    border:3px solid transparent;
+    text-align:center;
+    position:relative;
+    vertical-align:top;
+    overflow:hidden;
+    border-radius:100%;
+    background:#F7F7F7;
+    color:#000;
+}
+
+.item-list li img {
+    vertical-align:middle;
+    max-height:100%;
+    max-width:100%;
+}
+
+.item-list li span {
+    display:inline-block;
+    vertical-align:middle;
+    line-height:1.2;
+}
+
+@media (max-width:636px) {
+    .item-list {
+        line-height:75px;
+    }
+
+    .item-list li {
+        line-height:75px;
+        height:75px;
+        width:75px;
+    }
+}
+
+@media (max-width:423px) {
+    .item-list {
+        line-height:50px;
+    }
+
+    .item-list li {
+        line-height:50px;
+        height:50px;
+        width:50px;
+    }
+}
+
+#evaluating li {
+    cursor:pointer;
+}
+
+#favorites li {
+    cursor:move;
+}
+
+.item-list li:hover {
+    background:#CDF;
+}
+
+.item-list.sorting li:hover {
+    background:#F7F7F7;
+}
+
+#evaluating li.selected {
+    border:3px solid #7AC;
+}
+
+#evaluating, #buttons {
+    text-align:center;
+    margin:auto;
+}
+
+#evaluating li.notice {
+    width:auto;
+    height:auto;
+    max-width:260px;
+    margin:auto;
+    background:#F7F7F7;
+    border-radius:10px;
+    padding:30px 30px;
+    color:#000;
+    text-align:center;
+    line-height:1.4;
+    cursor:auto;
+    font-size:10pt;
+}
+
+#buttons {
+    margin-top:30px;
+    position:relative;
+    z-index:3;
+}
+</style>
+</head>
+<body>
+<h1>Picker</h1>
+
+<p>MySims Picker!</p>
+
+<div id="container">
+
+<div id="picking">
+<ul id="evaluating" class="item-list">
+</ul>
+
+<p id="buttons"><button id="pick">Pick</button> <button id="pass">Pass</button> <button id="undo">Undo</button> <button id="redo">Redo</button></p>
+</div>
+
+<div id="secondary">
+<h2>Found favorites</h2>
+
+<ol id="favorites" class="item-list">
+</ol>
+</div>
+</div>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+<script src="picker.js"></script>
+<script src="picker-ui.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+<script>
+'use strict';
+
+var items = [
+    // Define your items here
+
+ {id: 'annie', name: 'Annie Radd', image: 'annie.png'},
+    {id: 'bean bradley', name: 'Bean', image: 'bean.png'},
+    {id: 'beebee', name: 'Beebee', image: 'beebee.png'},
+ {id: 'billy', name: 'Billy', image: 'billy.png'},
+    {id: 'blaine', name: 'Blaine', image: 'blaine.png'},
+    {id: 'brandi', name: 'Brandi', image: 'brandi.png'},   
+    {id: 'brendan', name: 'Brendan', image: 'brendan.png'},
+    {id: 'buddy', name: 'Buddy', image: 'buddy.png'},
+{id: 'cassandra', name: 'Cassandra', image: 'cassandra.png'},   
+    {id: 'ikara', name: 'Chancellor Ikara', image: 'ikara.png'},
+    {id: 'chaz', name: 'Chaz McFreely', image: 'chaz.png'},
+ {id: 'gino', name: 'Chef Gino', image: 'gino.png'},    
+    {id: 'watanabe', name: 'Chef Watanabe', image: 'watanabe.png'},
+    {id: 'clara', name: 'Clara', image: 'clara.png'},
+    {id: 'clayton', name: 'Clayton', image: 'clayton.png'},   
+    {id: 'crystal', name: 'Crystal', image: 'Crystal3.png'},
+    {id: 'daryl', name: 'Daryl', image: 'daryl.png'},
+    {id: 'candy', name: 'DJ Candy', image: 'candy.png'},
+    {id: 'dolly', name: 'Dolly Dearheart', image: 'dolly.png'},
+    {id: 'drf', name: 'Dr. F', image: 'dr.f.png'},
+    {id: 'edwin', name: 'Edwin', image: 'edwin.png'},
+    {id: 'eliza', name: 'Eliza', image: 'eliza.png'},
+    {id: 'elmira', name: 'Elmira', image: 'elmira.png'},
+    {id: 'esma', name: 'Esma', image: 'esma.png'},
+    {id: 'gertrude', name: 'Gertrude', image: 'gertrude.png'},
+    {id: 'ginny', name: 'Ginny', image: 'ginny.png'},
+    {id: 'ruthie', name: 'Grandma Ruthie', image: 'ruthie.png'},
+    {id: 'gothboy', name: 'Goth Boy', image: 'gothboy.png'},
+    {id: 'gordon', name: 'Gordon', image: 'gordon.png'},
+    {id: 'hopper', name: 'Hopper', image: 'hopper.png'},
+    {id: 'ian', name: 'Ian', image: 'ian.png'},
+    {id: 'iggy', name: 'Iggy', image: 'iggy.png'},
+    {id: 'jenny', name: 'Jenny', image: 'jenny.png'},
+    {id: 'jeremy', name: 'Jeremy Snoars', image: 'jereny.png'},
+    {id: 'jimmy', name: 'Jimmy', image: 'jimmy.png'},
+    {id: 'karine', name: 'Karine', image: 'karine.png'},
+    {id: 'liberty', name: 'Liberty', image: 'liberty.png'},
+    {id: 'linda', name: 'Linda', image: 'linda.png'},
+    {id: 'luis', name: 'Luis', image: 'luis.png'},
+{id: 'zoe', name: 'Madame Zoe', image: 'zoe.png'},
+    {id: 'makoto', name: 'Makoto', image: 'makoto.png'},
+    {id: 'maria', name: 'Maria', image: 'maria.png'},
+    {id: 'aran', name: 'Master Aran', image: 'aran.png'},
+    {id: 'matt', name: 'Matt', image: 'matt.png'},
+    {id: 'mel', name: 'Mel', image: 'mel.png'},
+    {id: 'morcubus', name: 'Morcubus', image: 'morcubus.png'},
+ {id: 'nicole', name: 'Ms. Nicole', image: 'nicole.png'},
+    {id: 'noelle', name: 'Noelle', image: 'noelle.png'},
+    {id: 'odin', name: 'Odin Revolution', image: 'odin.png'},
+    {id: 'pablo', name: 'Pablo', image: 'pablo.png'},
+    {id: 'patrick', name: 'Patrick', image: 'patrick.png'},
+    {id: 'penelope', name: 'Penelope', image: 'penelope.png'},
+    {id: 'pinky', name: 'Pinky', image: 'pinky.png'},
+    {id: 'poppy', name: 'Poppy', image: 'poppy.png'},
+    {id: 'nova', name: 'Professor Nova', image: 'nova.png'},
+{id: 'raven', name: 'Raven', image: 'raven.png'},
+    {id: 'ray', name: 'Ray', image: 'ray.png'},
+    {id: 'renee', name: 'Renee', image: 'renee.png'},
+    {id: 'rhonda', name: 'Rhonda', image: 'rhonda.png'},
+    {id: 'rob', name: 'Rob', image: 'rob.png'},
+    {id: 'roger', name: 'Roger', image: 'roger.png'},
+    {id: 'rosalyn', name: 'Rosalyn P. Marshall', image: 'rosalyn.png'},
+{id: 'roxie', name: 'Roxie', image: 'roxie.png'},
+    {id: 'bob', name: 'Samurai Bob', image: 'bob.png'},
+    {id: 'sandra', name: 'Sandra', image: 'sandra.png'},
+    {id: 'sasha', name: 'Sasha', image: 'sasha.png'},
+    {id: 'shirley', name: 'Shirley', image: 'shirley.png'},
+    {id: 'vincent', name: 'Sir Vincent Skullfinder', image: 'vincent.png'},
+    {id: 'spencer', name: 'Spencer', image: 'spencer.png'},
+    {id: 'star', name: 'Star', image: 'star.png'},
+    {id: 'stephen', name: 'Stephen', image: 'stephen.png'},
+    {id: 'summer', name: 'Summer', image: 'summer.png'},
+    {id: 'taylor', name: 'Taylor', image: 'taylor.png'},
+    {id: 'travis', name: 'Travis', image: 'travis.png'},
+    {id: 'trevor', name: 'Trevor', image: 'trevor.png'},
+ {id: 'vic', name: 'Vic Vector', image: 'vic.png'},
+    {id: 'violet', name: 'Violet', image: 'violet.png'},
+    {id: 'yuki', name: 'Yuki', image: 'yuki.png'},
+    {id: 'cedella', name: 'Cedella', image: 'cedella.png'},
+    {id: 'natalia', name: 'Natalia Roshmanov', image: 'netalia.png'},
+    {id: 'tad', name: 'Flipper', image: 'flipper.png'},
+    {id: 'terry', name: 'Terry Toymender', image: 'terry.png'},
+    {id: 'wendalyn', name: 'Wendalyn', image: 'wendalyn.png'},
+    {id: 'ashley', name: 'Ashley', image: 'ashley.png'},
+    {id: 'charlie', name: 'Chef Charlie', image: 'charlie.png'},
+    {id: 'elizabeth', name: 'Elizabeth', image: 'elizabth.png'},
+    {id: 'emma', name: 'Emma', image: 'emma.png'},
+    {id: 'ewan', name: 'Officer Ewan', image: 'ewan.png'},
+{id: 'foster', name: 'Foster', image: 'foster.png'},
+    {id: 'hawk', name: 'Hawk', image: 'hawk.png'},
+    {id: 'helen', name: 'Helen', image: 'helen.png'},
+    {id: 'joseph', name: 'Joseph', image: 'joseph.png'},
+    {id: 'marie', name: 'Marie', image: 'marie.png'},
+    {id: 'martin', name: 'Martin', image: 'martin.png'},
+    {id: 'nicki', name: 'Nicki', image: 'nicki.png'},
+    {id: 'olivia', name: 'Olivia', image: 'olivia.png'},
+    {id: 'sophie', name: 'Sophie', image: 'sophie.png'},
+    {id: 'tim', name: 'Tim', image: 'tim.png'},
+    {id: 'tracy', name: 'Tracy', image: 'tracy.png'},
+    {id: 'tyler', name: 'Tyler', image: 'tyler.png'},
+    {id: 'barney', name: 'Barney', image: 'barney.png'},
+    {id: 'bobaboo', name: 'Bobaboo', image: 'bobaboo.png'},
+    {id: 'beverly', name: 'Beverley', image: 'bev.png'},
+    {id: 'gonk', name: 'Gonk', image: 'gonk.png'},
+    {id: 'roland', name: 'King Roland', image: 'roland.png'},
+    {id: 'leaf', name: 'Leaf', image: 'leaf.png'},
+    {id: 'daniel', name: 'Lord Daniel', image: 'daniel.png'},
+    {id: 'lyndsay', name: 'Lyndsay', image: 'lyndsay.png'},
+    {id: 'marlon', name: 'Marlon', image: 'marlon.png'},
+    {id: 'gabby', name: 'Ol Gabby', image: 'gabby.png'},
+    {id: 'petal', name: 'Petal', image: 'petal.png'},
+    {id: 'butter', name: 'Princess Butter', image: 'butter.png'},
+    {id: 'protomakoto', name: 'Proto-Makoto', image: 'PM.png'},
+    {id: 'rusty', name: 'Rusty', image: 'rusty.png'},
+    {id: 'sapphire', name: 'Sapphire', image: 'sapphire.png'},
+    {id: 'sylvia', name: 'Sylvia', image: 'sylvia.png'},
+    {id: 'tobor', name: 'TOBOR', image: 'tobor.png'},
+    {id: 'zack', name: 'Zombie Carl', image: 'carl.png'},
+    {id: 'amy', name: 'Amy', image: 'amy.png'},
+ {id: 'amelia', name: 'Amelia', image: 'ameliia.png'},
+    {id: 'abigail', name: 'Abigail', image: 'abbigail.png'},
+    {id: 'alexa', name: 'Alexa Lexington', image: 'alexa.png'},
+{id: 'dean', name: 'Dean', image: 'dean.png'},
+    {id: 'nefario', name: 'Dr. Nefario', image: 'dn.png'},
+    {id: 'ellen', name: 'Ellen', image: 'ellen.png'},
+    {id: 'emily', name: 'Emily', image: 'emily.png'},
+    {id: 'hank', name: 'Hank', image: 'hank.png'},
+    {id: 'hugh', name: 'Hugh', image: 'hugh.png'},
+    {id: 'johnny', name: 'Johnny', image: 'johnny.png'},
+    {id: 'lily', name: 'Lily', image: 'lily.png'},
+  {id: 'margaret', name: 'Margaret', image: 'margaret.png'},
+    {id: 'mary', name: 'Mary', image: 'mary.png'},
+    {id: 'richard', name: 'Richard', image: 'richard.png'},
+    {id: 'roy', name: 'Roy', image: 'roy.png'},
+    {id: 'sharon', name: 'Sharon', image: 'sharon.png'},
+    {id: 'torajiro', name: 'Torajiro', image: 'torajiro.png'},
+ {id: 'victoria', name: 'Victoria', image: 'victoria.png'},
+    {id: 'emi', name: 'MC Emi', image: 'emi.png'}, 
+    {id: 'mitch', name: 'Mitch', image: 'mitch.png'},
+{id: 'sachiko', name: 'Sachiko', image: 'sachiko.png'},
+{id: 'charles', name: 'Sir Charles', image: 'sircharles.png'},
+{id: 'derek', name: 'Derek', image: 'derek.png'},
+    {id: 'evelyn', name: 'Evelyn', image: 'evelyn.png'},
+    {id: 'justice', name: 'Justice', image: 'justice.png'},
+    {id: 'luke', name: 'Luke', image: 'luke.png'},
+    {id: 'mike', name: 'Mike', image: 'mike.png'},
+    {id: 'paul', name: 'Paul', image: 'paul.png'},
+ {id: 'preston', name: 'Preston', image: 'preston.png'},
+    {id: 'skip', name: 'Mayor Skip', image: 'skip.png'},
+    {id: 'walker', name: 'Walker', image: 'walker.png'},
+    {id: 'wolfah', name: 'Wolfah', image: 'wolfah.png'},
+    {id: 'magellan', name: 'Magellan', image: 'magellan.png'},
+    {id: 'abel', name: 'Abel', image: 'abel.png'},
+    {id: 'hopkins', name: 'Hopkins', image: 'hopkins.png'},
+    {id: 'joshua', name: 'Joshua', image: 'joshua.png'},
+ {id: 'katie', name: 'Katie', image: 'katie.png'},
+    {id: 'weather', name: 'Weather', image: 'weather.png'},
+    {id: 'michelle', name: 'Michelle', image: 'michelle.png'},
+    {id: 'filbert', name: 'Filbert', image: 'filbert.png'},
+    {id: 'suckers', name: 'Mr. Suckers', image: 'mrsuckers.png'},
+    {id: 'dragomir', name: 'Dragomir', image: 'dragomir.png'},
+    {id: 'finn', name: 'Finn', image: 'finn.png'},
+    {id: 'guillermo', name: 'Guillermo', image: 'guillermo.png'},
+    {id: 'kage', name: 'Kage', image: 'kage.png'},
+    {id: 'mira', name: 'Mira', image: 'mira.png'},
+    {id: 'raphael', name: 'Raphael', image: 'raphael.png'},
+    {id: 'rose', name: 'Rose', image: 'rose.png'},
+   {id: 'selena', name: 'Selena', image: 'selena.png'},
+    {id: 'svetlana', name: 'Svetlana', image: 'svetlana.png'}
+
+];
+
+
+var myPicker = new picker.Picker({
+    items: items
+});
+
+var pickerUI = new PickerUI(myPicker, {
+    elements: {
+        pick: "#pick",
+        pass: "#pass",
+        undo: "#undo",
+        redo: "#redo",
+        evaluating: "#evaluating",
+        favorites: "#favorites"
+    }
+});
+
+pickerUI.initialize();
+
+/* Sortable favorites - you can safely remove this, and the Sortable.min.js script, if you don't want to be able to sort your favorite list. */
+var sortable = new Sortable(pickerUI.elem.favorites.get(0), {
+    draggable: '.item',
+    animation: 100,
+    onStart: function() {
+        pickerUI.elem.favorites.addClass("sorting");
+    },
+    onEnd: function() {
+        pickerUI.elem.favorites.removeClass("sorting");
+    },
+    onUpdate: function() {
+        myPicker.setFavorites(pickerUI.elem.favorites.children().map(function() {
+            return pickerUI.getItem(this);
+        }).get());
+        pickerUI.update(true);
+    }
+});
+/* End sortable favorites */
+</script>
+</body>
+</html>
